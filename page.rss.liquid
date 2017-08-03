@@ -1,0 +1,142 @@
+{% layout none %}
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+	<channel>
+		<title>{{ shop.title }}</title>
+		<link>{{ shop.url }}</link>
+	<description>
+		Read our awesome news, every day.
+	</description>
+	<language>en-us</language>
+{% for link in linklists.blogs.links %}
+{% assign blog = link.object.handle %}
+	{% for article in blogs[blog].articles %}
+	<item>
+		<title>{{ article.title }}</title>
+		<link>{{ shop.url }}{{ article.url }}</link>
+		<guid>{{ shop.url }}{{ article.url }}</guid>
+		<pubDate>{{ article.published_at | date: '%Y-%m-%dT%I:%M' }}</pubDate>
+		<author>{{ article.author }}</author>
+		<content:encoded>
+		<![CDATA[
+			<!doctype html>
+			<html lang="en" prefix="op: http://media.facebook.com/op#">
+				<head>
+					<meta charset="utf-8">
+					<link rel="canonical" href="{{ shop.url }}{{ article.url }}">
+					<meta property="fb:article_style" content="default">
+					<meta property="op:markup_version" content="v1.0">
+					<link rel="stylesheet" title="default" href="#">
+					<title>{{ article.title }}</title>
+				</head>
+				<body>
+					<article>
+						<header>
+							<figure>
+							{% assign img_tag = '<img' %}
+							{% if article.image.src %}
+								<img src="http:{{ article.image.src }}" />
+							{% else %}
+								{% if article.content contains img_tag %}
+									{% assign src = article.content | split: '<img src="' %}
+									{% assign src = src[1] | split: '"' | first | remove: 'https:' | remove: 'http:' %}
+									{% if src %}
+										<img src="http:{{ src }}" />
+									{% endif %}
+								{% else %}
+										<img src="http:{{ 'blog_no_image.jpg' | asset_url }}" />
+								{% endif %}
+							{% endif %}
+        				
+        				<figcaption>{{ article.title }}</figcaption>
+      				</figure>
+
+							<h1>{{ article.title }}</h1>
+							<!-- A kicker for your article -->
+      				<h3 class="op-kicker">
+        				{{ blog.title }}
+      				</h3>
+							<!-- The author of your article -->
+							<address>
+							{{ article.author }}
+							</address>
+
+							<!— Article header goes here -->
+							<time datetime="{{ article.published_at | date: '%Y-%m-%dT%I:%M' }}" class="op-published">
+								{{ article.published_at | date: '%d, %m, %Y' }}
+							</time>
+
+							<time class="op-modified" dateTime="{{ article.updated_at | date: '%Y-%m-%dT%I:%M' }}">
+								{{ article.updated_at | date: '%d, %m, %Y' }}
+							</time>
+						</header>
+
+						<!— Article body goes here -->
+						<div>
+						{% assign result = article.content %}
+
+						{% comment %} remove p attribute {% endcomment %}
+						{% assign article_content_p = article.content %}
+						{% assign article_content_p = article_content_p | split: '<p ' %}
+						{% for content in article_content_p %}
+							{% assign content1 = content %}
+							{% assign attr = content1 | split: '>' | first %}
+							{% assign attr_last = attr | append: '>' | prepend: '<p ' %}
+							{% assign result = result | replace: attr_last, '<p>' %}
+						{% endfor %}
+
+						{% comment %} remove strong attribute {% endcomment %}
+						{% assign article_content_strong = article.content %}
+						{% assign article_content_strong = article_content_strong | split: '<strong ' %}
+						{% for content in article_content_strong %}
+							{% assign content1 = content %}
+							{% assign attr = content1 | split: '>' | first %}
+							{% assign attr_last = attr | append: '>' | prepend: '<strong ' %}
+							{% assign result = result | replace: attr_last, '<strong>' %}
+						{% endfor %}
+
+						{% comment %} remove span attribute {% endcomment %}
+						{% assign article_content_span = article.content %}
+						{% assign article_content_span = article_content_span | split: '<span ' %}
+						{% for content in article_content_span %}
+							{% assign content1 = content %}
+							{% assign attr = content1 | split: '>' | first %}
+							{% assign attr_last = attr | append: '>' | prepend: '<span ' %}
+							{% assign result = result | replace: attr_last, '<span>' %}
+						{% endfor %}
+
+						{% comment %} remove br tag not use {% endcomment %}
+						{% assign result = result | replace: '<p><br>', '<p>' | replace: '<br></p>', '</p>' %}
+
+						{% comment %} replace strong tag to h2 tag {% endcomment %}
+						{% if result contains '<p><strong>' %}
+							{% assign result = result | replace: '<p><strong>', '<h2>' | replace: '</strong>', '</h2>' %}
+						{% else %}
+							{% assign result = result | remove: '<strong>' | remove: '</strong>' %}
+						{% endif %}
+
+						{% comment %} remove strong, span tags {% endcomment %}
+					{% assign result = result	| remove: '<span>' | remove: '</span>' | remove: '<em>' | remove: '</em>' | replace: '> ', '>' | replace: ' <', '<' %}	
+
+						{% comment %} remove p over img {% endcomment %}
+						{% assign result = result | replace: '<p><img', '<img' | replace: '<p><iframe', '<iframe' %}
+
+						{% assign data_mce = 'data-mce-' %}
+						{% assign style = 'style' %}
+
+						{{ result | remove: data_mce | remove: style | replace: 'src="http://', 'src="https://' | replace: 'http:http://', 'https://' | replace: 'src="//', 'src="https://' }}
+						</div>
+						<footer>
+							<!— Article footer goes here -->
+							<p>@copyright</p>
+						</footer>
+					</article>
+				</body>
+			</html>
+		]]>
+		</content:encoded>
+	</item>
+	{% endfor %}
+{% endfor %}
+
+</channel>
+</rss>
